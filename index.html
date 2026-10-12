@@ -342,7 +342,7 @@ function render(){
     document.getElementById("tkNote").textContent=`${items.length} pessoas nos filtros atuais, sem encarregados e supervisores. Passe o mouse para pausar.`;
   }
   // atividades: mais recentes primeiro (data, depois horário de chegada)
-  const rows=[...R].sort((a,b)=>b.d.localeCompare(a.d)||(b.ch||"").localeCompare(a.ch||"")||a.tq.localeCompare(b.tq));
+  const rows=[...R].sort((a,b)=>b.d.localeCompare(a.d)||a.tq.localeCompare(b.tq,"pt-BR",{numeric:true})||(a.ch||"").localeCompare(b.ch||""));
   document.getElementById("tblNote").textContent=`${rows.length} lançamentos, do mais recente para o mais antigo.`;
   const fnOf=r=>Object.entries(r.fa||r.f).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v} ${k.charAt(0).toLowerCase()+k.slice(1)}`).join(" · ");
   document.getElementById("tbody").innerHTML=rows.length?rows.map(r=>{const fn=fnOf(r);
