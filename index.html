@@ -43,10 +43,10 @@ h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.2
 .frow{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;padding-block:10px}
 .frow+.frow{border-top:1px solid var(--line)}
 .fd{width:160px}.fs{width:200px}.fw{flex:1 1 100%}
-.fd input,.fs select{width:100%}
+.fd input,.fd select,.fs select{width:100%}
 .fg{display:flex;flex-direction:column;gap:4px;min-width:0}
 .fg>span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
-select,input[type="date"]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--base);border-radius:6px;padding:6px 8px;min-width:0}
+select,input[type="date"]{box-sizing:border-box;height:36px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--base);border-radius:6px;padding:6px 8px;min-width:0}
 select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--bar);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);background:var(--bg);border:1px solid var(--base);border-radius:999px;padding:4px 10px 4px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
@@ -142,6 +142,7 @@ footer{font-size:12px;color:var(--muted)}
 .lay-cel .toolbar{margin-left:0;width:100%;justify-content:space-between}
 .lay-cel .fd,.lay-cel .fs{width:auto;flex:1 1 40%}
 .lay-cel .fq{flex:1 1 100%}
+.lay-cel .fm{flex:1 1 100%}
 .lay-cel .seg{display:flex}.lay-cel .seg button{flex:1}
 .lay-cel .reset{margin-left:0;width:100%}
 .lay-cel .filters select{width:100%}
@@ -162,6 +163,7 @@ footer{font-size:12px;color:var(--muted)}
 
 <section class="filters" aria-label="Filtros">
   <div class="frow">
+    <label class="fg fd fm"><span>Mês</span><select id="fMes"></select></label>
     <label class="fg fd"><span>De</span><input type="date" id="fDe"></label>
     <label class="fg fd"><span>Até</span><input type="date" id="fAte"></label>
     <div class="fg fq"><span>Período rápido</span><div class="lay seg" role="group" aria-label="Período rápido"><button type="button" class="qk" data-q="1">Último dia</button><button type="button" class="qk" data-q="7">7 dias</button><button type="button" class="qk" data-q="0">Tudo</button></div></div>
@@ -219,7 +221,14 @@ const sel=(id,opts)=>{const e=document.getElementById(id);e.innerHTML=opts.map((
 const fDe=document.getElementById("fDe"), fAte=document.getElementById("fAte");
 [fDe,fAte].forEach(e=>{e.min=days[0];e.max=days[days.length-1]});
 const addD=(iso,n)=>{const t=new Date(iso+"T12:00:00");t.setDate(t.getDate()+n);return t.toISOString().slice(0,10)};
-function markQk(){const L=days[days.length-1];document.querySelectorAll(".qk").forEach(b=>{const q=+b.dataset.q;const de=q===0?days[0]:(addD(L,1-q)<days[0]?days[0]:addD(L,1-q));b.classList.toggle("on",S.ate===L&&S.de===de)})}
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const meses=[...new Set(days.map(d=>d.slice(0,7)))];
+const mesIni=m=>days.find(d=>d.startsWith(m)),mesFim=m=>days.filter(d=>d.startsWith(m)).pop();
+const fMes=document.getElementById("fMes");
+fMes.innerHTML=[`<option value="">Todos</option>`,...meses.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`)].join("");
+fMes.onchange=()=>{const m=fMes.value;if(m){S.de=mesIni(m);S.ate=mesFim(m)}else{S.de=days[0];S.ate=days[days.length-1]}sync();render()};
+function markMes(){const m=meses.find(m=>S.de===mesIni(m)&&S.ate===mesFim(m));fMes.value=m||""}
+function markQk(){markMes();const L=days[days.length-1];document.querySelectorAll(".qk").forEach(b=>{const q=+b.dataset.q;const de=q===0?days[0]:(addD(L,1-q)<days[0]?days[0]:addD(L,1-q));b.classList.toggle("on",S.ate===L&&S.de===de)})}
 document.querySelectorAll(".qk").forEach(b=>b.onclick=()=>{const q=+b.dataset.q,L=days[days.length-1];
   S.ate=L;S.de=q===0?days[0]:addD(L,1-q);if(S.de<days[0])S.de=days[0];sync();render()});
 const tqs=[...new Set(DATA.map(r=>r.tq))].sort((a,b)=>DATA.filter(r=>r.tq===b).length-DATA.filter(r=>r.tq===a).length);
@@ -227,7 +236,8 @@ const fTq=sel("fTq",[["","Todos"],...tqs.map(t=>[t,tqName(t)])]);
 const fTurno=document.getElementById("fTurno");
 const fDisc=document.getElementById("fDisc");
 fDisc.innerHTML=DISC.map(d=>`<button type="button" class="chip" aria-pressed="true" data-d="${d}"><i style="background:${dcol(d)}"></i>${cap(d)}</button>`).join("");
-function reset(){S.de=days[0];S.ate=days[days.length-1];S.tq="";S.turno="";S.disc=new Set(DISC);sync();render();}
+function mesAtual(){const n=new Date(),m=n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0");return meses.includes(m)?m:meses[meses.length-1]}
+function reset(){const m=mesAtual();S.de=mesIni(m);S.ate=mesFim(m);S.tq="";S.turno="";S.disc=new Set(DISC);sync();render();}
 function sync(){if(typeof markQk==="function")markQk();fDe.value=S.de;fAte.value=S.ate;fTq.value=S.tq;fTurno.value=S.turno;fDisc.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",S.disc.has(b.dataset.d)))}
 fDe.onchange=()=>{if(!fDe.value)return;S.de=fDe.value;if(S.ate<S.de){S.ate=S.de;fAte.value=S.ate}markQk();render()};
 fAte.onchange=()=>{if(!fAte.value)return;S.ate=fAte.value;if(S.de>S.ate){S.de=S.ate;fDe.value=S.de}markQk();render()};
