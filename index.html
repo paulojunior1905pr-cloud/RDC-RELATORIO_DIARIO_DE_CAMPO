@@ -183,7 +183,7 @@ footer{font-size:12px;color:var(--muted)}
 <section class="grid">
   <div class="card wide"><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez: a espera que se sobrepõe não é somada de novo. Atividades de canteiro ficam fora.</p><div id="cDia"></div></div>
   <div class="card"><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. Canteiro fica fora.</p><div id="cTq"></div></div>
-  <div class="card"><h2>Motivos de atraso</h2><p class="note">Lançamentos com liberação em 40 min ou mais, pelo motivo citado no RDC. Canteiro fica fora.</p><div id="cMot"></div></div>
+  <div class="card"><h2>Atrasos por TQ</h2><p class="note">Liberações que levaram 40 min ou mais após a chegada da equipe, do total de liberações do TQ e a porcentagem. Canteiro fica fora.</p><div id="cMot"></div></div>
   <div class="card"><h2>Efetivo por função</h2><p class="note">Pessoas-dia de campo. Cada pessoa conta uma vez por dia; encarregados e supervisores não entram.</p><div id="cFun"></div></div>
   <div class="card"><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div></div>
   <div class="card wide ticker" id="ticker" hidden><div class="tk-head"><h2>Colaboradores nas atividades</h2><span class="note" id="tkNote"></span></div><div class="tk-viewport"><div class="tk-track" id="tkTrack"></div></div></div>
@@ -256,9 +256,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 
 function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
 
-function hbars(el,rows,unit,fmt){ // rows: [label, value, tipHtml, dotColor?]
+function hbars(el,rows,unit,fmt){ // rows: [label, value, tipHtml, dotColor?, valueLabel?]
   if(!rows.length){el.innerHTML='<div class="empty">Sem dados para estes filtros.</div>';return}
-  const W=el.clientWidth||520, pr=56, need=Math.max(...rows.map(r=>r[0].length))*7.4+(rows[0][3]?24:12);
+  const W=el.clientWidth||520, pr=Math.max(56,...rows.map(r=>r[4]?String(r[4]).length*7.6+12:0)), need=Math.max(...rows.map(r=>r[0].length))*7.4+(rows[0][3]?24:12);
   const stack=need>W*.45, lw=stack?0:need, rh=stack?40:26, H=rows.length*rh+4;
   const mx=niceMax(Math.max(...rows.map(r=>r[1]))), sx=v=>(W-lw-pr)*v/mx;
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
@@ -267,7 +267,7 @@ function hbars(el,rows,unit,fmt){ // rows: [label, value, tipHtml, dotColor?]
     if(r[3])s+=`<circle cx="6" cy="${ty-4}" r="4.5" fill="${r[3]}"/>`;
     s+=`<text x="${r[3]?16:0}" y="${ty}">${esc(r[0])}</text>`;
     s+=`<rect class="m" x="${lw}" y="${by}" width="${w}" height="${bh}" rx="3"/>`;
-    s+=`<text class="val" x="${lw+w+6}" y="${by+bh/2+4}">${fmt(r[1])}</text>`;
+    s+=`<text class="val" x="${lw+w+6}" y="${by+bh/2+4}">${esc(r[4]!=null?String(r[4]):fmt(r[1]))}</text>`;
     s+=`<rect class="hit" x="0" y="${y}" width="${W}" height="${rh}"/></g>`});
   el.innerHTML=s+(stack?"":`<line class="baseline" x1="${lw}" x2="${lw}" y1="0" y2="${H}"/>`)+`</svg>`;
 }
@@ -318,8 +318,8 @@ function render(){
     return [tqName(t),Math.round(m),`<b>${tqName(t)}</b><br>${Math.round(m)} min em média<br>${v.length} lançamentos, maior espera ${Math.max(...v)} min`]}).sort((a,b)=>b[1]-a[1]),"min",v=>v+" min");
 
   // motivos
-  const mo={};R.filter(r=>r.atr).forEach(r=>motivo(r).forEach(m=>mo[m]=(mo[m]||0)+1));
-  hbars(document.getElementById("cMot"),Object.entries(mo).sort((a,b)=>b[1]-a[1]).map(([m,n])=>[m,n,`<b>${m}</b><br>${n} lançamento${n>1?"s":""}`]),"",v=>v);
+  const at={},lt={};R.filter(r=>!r.cant&&r.w!=null).forEach(r=>{lt[r.tq]=(lt[r.tq]||0)+1;if(r.atr)at[r.tq]=(at[r.tq]||0)+1});
+  hbars(document.getElementById("cMot"),Object.entries(at).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"pt-BR",{numeric:true})).map(([t,n])=>[tqName(t),n,`<b>${tqName(t)}</b><br>${n} de ${lt[t]} liberações com 40 min ou mais (${Math.round(n/lt[t]*100)}%)`,null,`${n} de ${lt[t]} (${Math.round(n/lt[t]*100)}%)`]),"",v=>v+(v>1?" atrasos":" atraso"));
 
   // funções
   const fu={};R.forEach(r=>Object.entries(r.f).forEach(([k,v])=>fu[k]=(fu[k]||0)+v));
