@@ -269,7 +269,7 @@ svg .lt{fill:var(--late)}
   <div class="card wide"><p class="eyebrow">Frentes de serviço</p><h2>Atividades por TQ e por dia</h2><p class="note">Quantas atividades cada local teve em cada dia (a mesma PT conta uma vez). Quanto mais escuro, mais atividades. O ponto laranja indica que houve atraso.</p><div id="cMapa"></div><p class="tapnote">Toque em um quadro para filtrar o TQ e o dia; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Espera</p><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. A linha tracejada marca 40 min. Canteiro fica fora.</p><div id="cTq"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Atrasos</p><h2>Atrasos por TQ</h2><p class="note">Parte das atividades liberada com 40 min ou mais após a chegada. A mesma PT lançada por equipes diferentes conta uma vez. Canteiro fica fora.</p><div class="lgd"><span><i style="background:var(--late)"></i>Com atraso</span><span><i style="background:var(--ontime)"></i>Até 40 min</span></div><div id="cMot"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
-  <div class="card"><p class="eyebrow">Efetivo</p><h2>Efetivo por função</h2><p class="note">Pessoas-dia de campo; o tamanho de cada bloco é proporcional. Cada pessoa conta uma vez por dia; encarregados e supervisores não entram.</p><div id="cFun"></div></div>
+  <div class="card"><p class="eyebrow">Efetivo</p><h2>Efetivo por função</h2><p class="note">Pessoas-dia de campo no período e, à direita, quantas pessoas por dia em média. As funções menores ficam juntas em "Outras". Cada pessoa conta uma vez por dia; encarregados e supervisores não entram.</p><div id="cFun"></div></div>
   <div class="card"><p class="eyebrow">Disciplinas</p><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div><p class="tapnote">Toque em uma fatia ou disciplina para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card wide ticker" id="ticker" hidden><div class="tk-head"><h2>Colaboradores nas atividades</h2><span class="note" id="tkNote"></span></div><div class="tk-viewport"><div class="tk-track" id="tkTrack"></div></div></div>
   <div class="card wide"><h2>Atividades</h2><p class="note" id="tblNote"></p><div class="cards" id="cards"></div><div class="tblwrap"><table><thead><tr><th>Data</th><th>Turno</th><th>TQ</th><th>Disciplina</th><th>Atividade</th><th>Chegada</th><th>Liberação</th><th>Espera</th><th>Efetivo</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
@@ -440,6 +440,18 @@ function stack100(el,rows){ // rows: [label, atrasos, total, tip, key]
     s+=`<text class="val" x="${lw+bwid+8}" y="${y+4}">${Math.round(a*100)}%</text><text class="ax" x="${W}" y="${y+4}" text-anchor="end">${r[1]} de ${r[2]}</text><rect class="hit" x="0" y="${y-rh/2}" width="${W}" height="${rh}"/></g>`});
   el.innerHTML=s+`</svg>`;
 }
+
+function rankbars(el,rows,nd,top){ // rows: [label, value] ordenadas; agrupa o resto em "Outras"
+  if(!rows.length){el.innerHTML=EMPTY;return}
+  let rs=rows.slice(0,top);const rest=rows.slice(top);
+  if(rest.length===1)rs.push(rest[0]);else if(rest.length)rs.push([`Outras ${rest.length} funções`,rest.reduce((a,r)=>a+r[1],0),rest.map(r=>r[0]+": "+r[1]).join("<br>"),true]);
+  const W=el.clientWidth||520,lw=Math.min(W*.4,Math.max(...rs.map(r=>r[0].length))*7.2+12),pr=104,rh=32,H=rs.length*rh+4,mx=Math.max(...rs.map(r=>r[1]));
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
+  rs.forEach((r,i)=>{const y=i*rh+rh/2,w=Math.max(3,(W-lw-pr)*r[1]/mx),oth=r[3],md=nd?nf.format(r[1]/nd):"–";
+    const tp=`<b>${esc(r[0])}</b><br>${r[1]} pessoas-dia${nd?`<br>${md} por dia em média`:""}`+(oth?`<br><br>${r[2]}`:"");
+    s+=`<g class="hov" data-tip="${esc(tp)}"><text x="0" y="${y+4}"${oth?' style="fill:var(--muted)"':""}>${esc(r[0])}</text><rect class="m" x="${lw}" y="${y-8}" width="${w}" height="16" rx="5"${oth?' style="fill:var(--base)"':""}/><text class="val" x="${lw+w+8}" y="${y+4}">${r[1]}</text><text class="ax" x="${W}" y="${y+4}" text-anchor="end">${md}/dia</text><rect class="hit" x="0" y="${y-rh/2}" width="${W}" height="${rh}"/></g>`});
+  el.innerHTML=s+`</svg>`;
+}
 function treemap(el,rows){ // rows: [label, value, tip] (ordenadas do maior para o menor)
   if(!rows.length){el.innerHTML=EMPTY;return}
   const W=el.clientWidth||520,H=Math.max(220,Math.min(300,W*.55)),tot=rows.reduce((a,r)=>a+r[1],0);
@@ -524,7 +536,7 @@ function render(){
 
   // funções
   const fu={};R.forEach(r=>Object.entries(r.f).forEach(([k,v])=>fu[k]=(fu[k]||0)+v));
-  treemap(document.getElementById("cFun"),Object.entries(fu).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,v,`<b>${k}</b><br>${v} pessoas-dia${nd?`<br>${nf.format(v/nd)} por dia em média`:""}`]));
+  rankbars(document.getElementById("cFun"),Object.entries(fu).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"pt-BR")),nd,8);
 
   // disciplinas
   const di={};R.forEach(r=>di[r.disc]=(di[r.disc]||0)+1);
