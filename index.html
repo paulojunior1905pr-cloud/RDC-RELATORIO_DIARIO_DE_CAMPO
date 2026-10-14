@@ -73,6 +73,8 @@ svg .grid line{stroke:var(--line)}
 svg .baseline{stroke:var(--base)}
 svg rect.m{fill:var(--bar)}
 svg .hov:hover rect.m,svg .hov.on rect.m{fill:var(--bar-hi)}
+svg .clk{cursor:pointer} svg .sel rect.m{fill:var(--bar-hi);stroke:var(--ink);stroke-width:1.5}
+.tapnote{font-size:12.5px;color:var(--muted,#6b7785);margin:6px 0 0}
 svg .hit{fill:transparent;cursor:pointer}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:6px;max-width:260px;z-index:10;line-height:1.35}
 .day{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
@@ -149,6 +151,7 @@ footer{font-size:12px;color:var(--muted)}
 .lay-cel .tblwrap{display:none}
 .lay-cel .cards{display:flex}
 @media (prefers-reduced-motion:no-preference){svg rect.m{transition:fill .12s}}
+text.val.sm{font-size:10.5px}
 </style>
 
 <div class="wrap">
@@ -181,11 +184,11 @@ footer{font-size:12px;color:var(--muted)}
 <section class="kpis" id="kpis"></section>
 
 <section class="grid">
-  <div class="card wide"><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez: a espera que se sobrepõe não é somada de novo. Atividades de canteiro ficam fora.</p><div id="cDia"></div></div>
-  <div class="card"><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. Canteiro fica fora.</p><div id="cTq"></div></div>
-  <div class="card"><h2>Atrasos por TQ</h2><p class="note">Liberações que levaram 40 min ou mais após a chegada da equipe, do total de liberações do TQ e a porcentagem. Canteiro fica fora.</p><div id="cMot"></div></div>
+  <div class="card wide"><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez: a espera que se sobrepõe não é somada de novo. Atividades de canteiro ficam fora.</p><div id="cDia"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. Canteiro fica fora.</p><div id="cTq"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><h2>Atrasos por TQ</h2><p class="note">Liberações que levaram 40 min ou mais após a chegada da equipe, do total de liberações do TQ e a porcentagem. Canteiro fica fora.</p><div id="cMot"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><h2>Efetivo por função</h2><p class="note">Pessoas-dia de campo. Cada pessoa conta uma vez por dia; encarregados e supervisores não entram.</p><div id="cFun"></div></div>
-  <div class="card"><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div></div>
+  <div class="card"><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card wide ticker" id="ticker" hidden><div class="tk-head"><h2>Colaboradores nas atividades</h2><span class="note" id="tkNote"></span></div><div class="tk-viewport"><div class="tk-track" id="tkTrack"></div></div></div>
   <div class="card wide"><h2>Atividades</h2><p class="note" id="tblNote"></p><div class="cards" id="cards"></div><div class="tblwrap"><table><thead><tr><th>Data</th><th>Turno</th><th>TQ</th><th>Disciplina</th><th>Atividade</th><th>Chegada</th><th>Liberação</th><th>Espera</th><th>Efetivo</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
 </section>
@@ -263,7 +266,7 @@ function hbars(el,rows,unit,fmt){ // rows: [label, value, tipHtml, dotColor?, va
   const mx=niceMax(Math.max(...rows.map(r=>r[1]))), sx=v=>(W-lw-pr)*v/mx;
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
   rows.forEach((r,i)=>{const y=i*rh+2, w=Math.max(r[1]>0?3:0,sx(r[1])), ty=stack?y+12:y+rh/2+3, by=stack?y+19:y+5, bh=stack?14:rh-12;
-    s+=`<g class="hov" data-tip="${esc(r[2])}">`;
+    s+=`<g class="hov${r[5]!=null?" clk":""}${r[5]!=null&&isSel(r[5])?" sel":""}" data-tip="${esc(r[2])}"${r[5]!=null?` data-k="${esc(r[5])}"`:""}>`;
     if(r[3])s+=`<circle cx="6" cy="${ty-4}" r="4.5" fill="${r[3]}"/>`;
     s+=`<text x="${r[3]?16:0}" y="${ty}">${esc(r[0])}</text>`;
     s+=`<rect class="m" x="${lw}" y="${by}" width="${w}" height="${bh}" rx="3"/>`;
@@ -274,7 +277,7 @@ function hbars(el,rows,unit,fmt){ // rows: [label, value, tipHtml, dotColor?, va
 
 function vbars(el,rows){ // rows: [label, value, tip]
   if(!rows.length){el.innerHTML='<div class="empty">Sem dados para estes filtros.</div>';return}
-  const W=el.clientWidth||900, H=220, pl=36, pb=24, pt=18;
+  const W=el.clientWidth||900, nar=(W-36)/rows.length<34, H=nar?240:220, pl=36, pb=24, pt=nar?40:18;
   const mx=niceMax(Math.max(...rows.map(r=>r[1]))), ih=H-pb-pt, sy=v=>ih*v/mx;
   const bw=(W-pl)/rows.length, w=Math.min(46,bw*.62);
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><g class="grid">`;
@@ -282,12 +285,19 @@ function vbars(el,rows){ // rows: [label, value, tip]
   s+=`</g>`;
   const peak=Math.max(...rows.map(r=>r[1]));
   rows.forEach((r,i)=>{const cx=pl+bw*i+bw/2,h=sy(r[1]),y=pt+ih-h;
-    s+=`<g class="hov" data-tip="${esc(r[2])}"><rect class="m" x="${cx-w/2}" y="${y}" width="${w}" height="${Math.max(h,r[1]>0?2:0)}" rx="3"/>`;
-    if(r[1]===peak||(rows.length<=12&&bw>=40))s+=`<text class="val" x="${cx}" y="${y-5}" text-anchor="middle">${nf.format(r[1])}</text>`;
-    s+=(bw>=40||i%2===(rows.length-1)%2?`<text class="ax" x="${cx}" y="${H-7}" text-anchor="middle">${r[0]}</text>`:"")+`<rect class="hit" x="${cx-bw/2}" y="${pt}" width="${bw}" height="${ih}"/></g>`});
+    s+=`<g class="hov${r[3]!=null?" clk":""}${r[3]!=null&&isSel(r[3])?" sel":""}" data-tip="${esc(r[2])}"${r[3]!=null?` data-k="${esc(r[3])}"`:""}><rect class="m" x="${cx-w/2}" y="${y}" width="${w}" height="${Math.max(h,r[1]>0?2:0)}" rx="3"/>`;
+    if(r[1]>0){const t=nf.format(r[1]);s+=bw>=34?`<text class="val" x="${cx}" y="${y-5}" text-anchor="middle">${t}</text>`:`<text class="val sm" transform="translate(${cx+3.5},${y-4}) rotate(-90)">${t}</text>`}
+    s+=(bw>=40||i%2===(rows.length-1)%2?`<text class="ax" x="${Math.min(cx,W-20)}" y="${H-7}" text-anchor="middle">${r[0]}</text>`:"")+`<rect class="hit" x="${cx-bw/2}" y="${pt}" width="${bw}" height="${ih}"/></g>`});
   el.innerHTML=s+`<line class="baseline" x1="${pl}" x2="${W}" y1="${pt+ih}" y2="${pt+ih}"/></svg>`;
 }
 
+function isSel(k){const [t,v]=k.split(/:(.*)/);return t==="d"?(S.de===v&&S.ate===v):t==="tq"?S.tq===v:t==="disc"?(S.disc.size===1&&S.disc.has(v)):false}
+let prevRange=null;
+document.addEventListener("click",e=>{const g=e.target.closest&&e.target.closest("[data-k]");if(!g)return;const [t,v]=g.dataset.k.split(/:(.*)/);
+  if(t==="d"){if(S.de===v&&S.ate===v){const p=prevRange||{de:mesIni(v.slice(0,7)),ate:mesFim(v.slice(0,7))};S.de=p.de;S.ate=p.ate;prevRange=null}else{if(S.de!==S.ate)prevRange={de:S.de,ate:S.ate};S.de=v;S.ate=v}}
+  else if(t==="tq")S.tq=S.tq===v?"":v;
+  else if(t==="disc")S.disc=(S.disc.size===1&&S.disc.has(v))?new Set(DISC):new Set([v]);
+  tip.hidden=true;sync();render()});
 function hhOf(r){return r.hh||0}
 const mfTxt=r=>"";
 function render(){
@@ -309,17 +319,17 @@ function render(){
 
   // por dia
   const byD=days.filter(d=>d>=S.de&&d<=S.ate).map(d=>{const x=R.filter(r=>r.d===d);const h=x.reduce((a,r)=>a+hhOf(r),0);
-    return [fmtD(d),Math.round(h*10)/10,`<b>${fmtD(d)}</b><br>${nf.format(h)} HH aguardando<br>${x.length} lançamentos · ${x.filter(r=>r.atr).length} com atraso<br>${x.reduce((a,r)=>a+(r.mfn||0),0)} pessoas em mais de uma frente`]});
+    return [fmtD(d),Math.round(h*10)/10,`<b>${fmtD(d)}</b><br>${nf.format(h)} HH aguardando<br>${x.length} lançamentos · ${x.filter(r=>r.atr).length} com atraso<br>${x.reduce((a,r)=>a+(r.mfn||0),0)} pessoas em mais de uma frente`,"d:"+d]});
   vbars(document.getElementById("cDia"),byD);
 
   // por TQ
   const tqm={};ws.forEach(r=>{(tqm[r.tq]=tqm[r.tq]||[]).push(r.w)});
   hbars(document.getElementById("cTq"),Object.entries(tqm).map(([t,v])=>{const m=v.reduce((a,b)=>a+b,0)/v.length;
-    return [tqName(t),Math.round(m),`<b>${tqName(t)}</b><br>${Math.round(m)} min em média<br>${v.length} lançamentos, maior espera ${Math.max(...v)} min`]}).sort((a,b)=>b[1]-a[1]),"min",v=>v+" min");
+    return [tqName(t),Math.round(m),`<b>${tqName(t)}</b><br>${Math.round(m)} min em média<br>${v.length} lançamentos, maior espera ${Math.max(...v)} min`,null,null,"tq:"+t]}).sort((a,b)=>b[1]-a[1]),"min",v=>v+" min");
 
   // motivos
   const at={},lt={};R.filter(r=>!r.cant&&r.w!=null).forEach(r=>{lt[r.tq]=(lt[r.tq]||0)+1;if(r.atr)at[r.tq]=(at[r.tq]||0)+1});
-  hbars(document.getElementById("cMot"),Object.entries(at).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"pt-BR",{numeric:true})).map(([t,n])=>[tqName(t),n,`<b>${tqName(t)}</b><br>${n} de ${lt[t]} liberações com 40 min ou mais (${Math.round(n/lt[t]*100)}%)`,null,`${n} de ${lt[t]} (${Math.round(n/lt[t]*100)}%)`]),"",v=>v+(v>1?" atrasos":" atraso"));
+  hbars(document.getElementById("cMot"),Object.entries(at).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"pt-BR",{numeric:true})).map(([t,n])=>[tqName(t),n,`<b>${tqName(t)}</b><br>${n} de ${lt[t]} liberações com 40 min ou mais (${Math.round(n/lt[t]*100)}%)`,null,`${n} de ${lt[t]} (${Math.round(n/lt[t]*100)}%)`,"tq:"+t]),"",v=>v+(v>1?" atrasos":" atraso"));
 
   // funções
   const fu={};R.forEach(r=>Object.entries(r.f).forEach(([k,v])=>fu[k]=(fu[k]||0)+v));
@@ -327,7 +337,7 @@ function render(){
 
   // disciplinas
   const di={};R.forEach(r=>di[r.disc]=(di[r.disc]||0)+1);
-  hbars(document.getElementById("cDisc"),Object.entries(di).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[cap(k),v,`<b>${cap(k)}</b><br>${v} lançamentos<br>${R.filter(r=>r.disc===k&&r.atr).length} com atraso`,dcol(k)]),"",v=>v);
+  hbars(document.getElementById("cDisc"),Object.entries(di).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[cap(k),v,`<b>${cap(k)}</b><br>${v} lançamentos<br>${R.filter(r=>r.disc===k&&r.atr).length} com atraso`,dcol(k),null,"disc:"+k]),"",v=>v);
 
 
   // faixa de colaboradores (teste com nomes; só aparece se NAMES vier preenchido)
