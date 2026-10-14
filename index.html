@@ -267,7 +267,7 @@ svg .lt{fill:var(--late)}
 
 <section class="grid">
   <div class="card wide"><p class="eyebrow">Espera</p><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez. Canteiro fica fora.</p><div id="cDia"></div><p class="tapnote">Toque em um ponto para filtrar o dia; toque de novo para voltar.</p></div>
-  <div class="card wide"><p class="eyebrow">Frentes de serviço</p><h2>Atividades por TQ e por dia</h2><p class="note">Quantas atividades cada local teve em cada dia (a mesma PT conta uma vez). Quanto mais escuro, mais atividades. O ponto laranja indica que houve atraso.</p><div id="cMapa"></div><p class="tapnote">Toque em um quadro para filtrar o TQ e o dia; toque de novo para voltar.</p></div>
+  <div class="card wide"><p class="eyebrow">Frentes de serviço</p><h2>Atividades por TQ e por dia</h2><p class="note">Quantas atividades cada local teve em cada dia (a mesma PT conta uma vez). Quanto mais escuro, mais atividades. O ponto laranja indica que houve atraso. Canteiro fica fora.</p><div id="cMapa"></div><p class="tapnote">Toque em um quadro para filtrar o TQ e o dia; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Espera</p><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. A linha tracejada marca 40 min. Canteiro fica fora.</p><div id="cTq"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Atrasos</p><h2>Atrasos por TQ</h2><p class="note">Parte das atividades liberada com 40 min ou mais após a chegada. A mesma PT lançada por equipes diferentes conta uma vez. Canteiro fica fora.</p><div class="lgd"><span><i style="background:var(--late)"></i>Com atraso</span><span><i style="background:var(--ontime)"></i>Até 40 min</span></div><div id="cMot"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Efetivo</p><h2>Efetivo por função</h2><p class="note">Quantos colaboradores diferentes atuaram em cada função no período filtrado; filtrando um dia, é o efetivo daquele dia. As funções menores ficam juntas em "Outras". Encarregados e supervisores não entram.</p><p class="kt" id="funTot"></p><div id="cFun"></div></div>
@@ -321,7 +321,8 @@ function markMes(){const m=meses.find(m=>S.de===mesIni(m)&&S.ate===mesFim(m));fM
 function markQk(){markMes();const L=days[days.length-1];document.querySelectorAll(".qk").forEach(b=>{const q=+b.dataset.q;const de=q===0?days[0]:(addD(L,1-q)<days[0]?days[0]:addD(L,1-q));b.classList.toggle("on",S.ate===L&&S.de===de)})}
 document.querySelectorAll(".qk").forEach(b=>b.onclick=()=>{const q=+b.dataset.q,L=days[days.length-1];
   S.ate=L;S.de=q===0?days[0]:addD(L,1-q);if(S.de<days[0])S.de=days[0];sync();render()});
-const tqs=[...new Set(DATA.map(r=>r.tq))].sort((a,b)=>DATA.filter(r=>r.tq===b).length-DATA.filter(r=>r.tq===a).length);
+const tqOrd=(a,b)=>(a==="CANTEIRO")-(b==="CANTEIRO")||a.localeCompare(b,"pt-BR",{numeric:true});
+const tqs=[...new Set(DATA.map(r=>r.tq))].sort(tqOrd);
 const fTq=sel("fTq",[["","Todos"],...tqs.map(t=>[t,tqName(t)])]);
 const fTurno=document.getElementById("fTurno");
 const fDisc=document.getElementById("fDisc");
@@ -522,7 +523,7 @@ function render(){
   areaChart(document.getElementById("cDia"),byD);
 
   // mapa TQ x dia
-  const mds=dsel.filter(d=>R.some(r=>r.d===d)),mtq=[...new Set(R.map(r=>r.tq))].sort((a,b)=>nAt(R.filter(r=>r.tq===b))-nAt(R.filter(r=>r.tq===a))||a.localeCompare(b,"pt-BR",{numeric:true}));
+  const mds=dsel.filter(d=>R.some(r=>r.d===d)),mtq=[...new Set(R.filter(r=>!r.cant).map(r=>r.tq))].sort(tqOrd);
   heatmap(document.getElementById("cMapa"),mtq,mds,(t,d)=>{const x=R.filter(r=>r.tq===t&&r.d===d),n=nAt(x),a=nAtr(x);
     return {n,atr:a,tip:`<b>${tqName(t)} · ${fmtD(d)}</b><br>${n} atividade${n===1?"":"s"}${t==="CANTEIRO"?"":` · ${a} com atraso`}<br>${x.reduce((p,r)=>p+(r.mo||0),0)} pessoas lançadas`}});
 
