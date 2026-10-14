@@ -74,6 +74,12 @@ svg .baseline{stroke:var(--base)}
 svg rect.m{fill:var(--bar)}
 svg .hov:hover rect.m,svg .hov.on rect.m{fill:var(--bar-hi)}
 svg .clk{cursor:pointer} svg .sel rect.m{fill:var(--bar-hi);stroke:var(--ink);stroke-width:1.5}
+.dn{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.dn svg{flex:none}
+svg .sl{stroke:var(--surface);stroke-width:2;transition:opacity .12s} svg .hov:hover .sl{opacity:.85} svg .sel .sl{stroke:var(--ink);stroke-width:2.5}
+.dnt{font-size:28px;font-weight:800;fill:var(--ink)}
+.dnl{flex:1;min-width:190px}.dnr{display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+.dnr i{width:11px;height:11px;border-radius:3px;flex:none}.dnr b{margin-left:auto;color:var(--ink)}.dnr em{font-style:normal;color:var(--muted);width:38px;text-align:right}
+.dnr.sel{background:var(--chip);font-weight:600}
 .tapnote{font-size:12.5px;color:var(--muted,#6b7785);margin:6px 0 0}
 svg .hit{fill:transparent;cursor:pointer}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:6px;max-width:260px;z-index:10;line-height:1.35}
@@ -188,7 +194,7 @@ text.val.sm{font-size:10.5px}
   <div class="card"><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. Canteiro fica fora.</p><div id="cTq"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><h2>Atrasos por TQ</h2><p class="note">Liberações que levaram 40 min ou mais após a chegada da equipe, do total de liberações do TQ e a porcentagem. Canteiro fica fora.</p><div id="cMot"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><h2>Efetivo por função</h2><p class="note">Pessoas-dia de campo. Cada pessoa conta uma vez por dia; encarregados e supervisores não entram.</p><div id="cFun"></div></div>
-  <div class="card"><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div><p class="tapnote">Toque em uma barra para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div><p class="tapnote">Toque em uma fatia ou disciplina para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card wide ticker" id="ticker" hidden><div class="tk-head"><h2>Colaboradores nas atividades</h2><span class="note" id="tkNote"></span></div><div class="tk-viewport"><div class="tk-track" id="tkTrack"></div></div></div>
   <div class="card wide"><h2>Atividades</h2><p class="note" id="tblNote"></p><div class="cards" id="cards"></div><div class="tblwrap"><table><thead><tr><th>Data</th><th>Turno</th><th>TQ</th><th>Disciplina</th><th>Atividade</th><th>Chegada</th><th>Liberação</th><th>Espera</th><th>Efetivo</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
 </section>
@@ -298,6 +304,17 @@ document.addEventListener("click",e=>{const g=e.target.closest&&e.target.closest
   else if(t==="tq")S.tq=S.tq===v?"":v;
   else if(t==="disc")S.disc=(S.disc.size===1&&S.disc.has(v))?new Set(DISC):new Set([v]);
   tip.hidden=true;sync();render()});
+function donut(el,rows){ // rows: [disc, value, tip]
+  if(!rows.length){el.innerHTML='<div class="empty">Sem dados para estes filtros.</div>';return}
+  const tot=rows.reduce((a,r)=>a+r[1],0),cx=90,cy=90,R0=86,R1=54;let a0=-Math.PI/2,s=`<div class="dn"><svg width="180" height="180" viewBox="0 0 180 180" role="img">`;
+  const P=(a,r)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+  rows.forEach(r=>{const k="disc:"+r[0];let a1=a0+2*Math.PI*r[1]/tot;if(rows.length===1)a1=a0+2*Math.PI-1e-4;const la=a1-a0>Math.PI?1:0;
+    const [x0,y0]=P(a0,R0),[x1,y1]=P(a1,R0),[x2,y2]=P(a1,R1),[x3,y3]=P(a0,R1);
+    s+=`<g class="hov clk${isSel(k)?" sel":""}" data-tip="${esc(r[2])}" data-k="${esc(k)}">${rows.length===1?`<circle cx="${cx}" cy="${cy}" r="${(R0+R1)/2}" fill="none" stroke="${dcol(r[0])}" stroke-width="${R0-R1}"/>`:`<path class="sl" d="M${x0},${y0} A${R0},${R0} 0 ${la} 1 ${x1},${y1} L${x2},${y2} A${R1},${R1} 0 ${la} 0 ${x3},${y3}Z" fill="${dcol(r[0])}"/>`}</g>`;a0=a1});
+  s+=`<text class="dnt" x="${cx}" y="${cy+4}" text-anchor="middle">${tot}</text><text class="ax" x="${cx}" y="${cy+22}" text-anchor="middle">atividades</text></svg><div class="dnl">`;
+  rows.forEach(r=>{const k="disc:"+r[0];s+=`<div class="dnr clk${isSel(k)?" sel":""}" data-tip="${esc(r[2])}" data-k="${esc(k)}"><i style="background:${dcol(r[0])}"></i><span>${cap(r[0])}</span><b>${r[1]}</b><em>${Math.round(r[1]/tot*100)}%</em></div>`});
+  el.innerHTML=s+`</div></div>`;
+}
 function hhOf(r){return r.hh||0}
 const mfTxt=r=>"";
 function render(){
@@ -337,7 +354,7 @@ function render(){
 
   // disciplinas
   const di={};R.forEach(r=>di[r.disc]=(di[r.disc]||0)+1);
-  hbars(document.getElementById("cDisc"),Object.entries(di).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[cap(k),v,`<b>${cap(k)}</b><br>${v} lançamentos<br>${R.filter(r=>r.disc===k&&r.atr).length} com atraso`,dcol(k),null,"disc:"+k]),"",v=>v);
+  donut(document.getElementById("cDisc"),Object.entries(di).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,v,`<b>${cap(k)}</b><br>${v} lançamentos<br>${R.filter(r=>r.disc===k&&r.atr).length} com atraso`]));
 
 
   // faixa de colaboradores (teste com nomes; só aparece se NAMES vier preenchido)
