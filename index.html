@@ -235,13 +235,13 @@ svg .lt{fill:var(--late)}
 .kt{margin:0;font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--ink)}
 .lay-cel header.hero{margin-top:10px;padding:14px}
 
-.ptw{margin-left:auto;display:flex;align-items:center;gap:12px;padding:2px 2px 0}
+.ptw{margin-left:auto;display:flex;align-items:center;gap:16px;padding:2px 2px 0}
 .ptw svg{display:block;flex:none}
 .ptw .ct{font-family:var(--f-display);font-weight:700;fill:var(--ink)}
-.ptw .cs{font-size:10px;fill:var(--muted);font-weight:600}
-.ptw .cap{font-size:12px;letter-spacing:.02em;color:var(--muted);font-weight:600;margin-bottom:3px}
-.ptw .lg{font-size:12px;color:var(--ink2);line-height:1.55;white-space:nowrap}
-.ptw .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+.ptw .cs{font-size:13px;fill:var(--muted);font-weight:600}
+.ptw .cap{font-size:14px;letter-spacing:.02em;color:var(--muted);font-weight:600;margin-bottom:3px}
+.ptw .lg{font-size:14.5px;color:var(--ink2);line-height:1.55;white-space:nowrap}
+.ptw .lg i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px}
 .ptw .lg b{color:var(--ink);font-weight:600}
 .ptw .seg{transition:opacity .15s}
 .lay-cel .ptw{margin-left:0;width:100%;justify-content:flex-start}
@@ -517,13 +517,13 @@ function ptRing(R){
   else if(VAR==="B"){const a=L.filter(g=>g.late).length;segs=[[n-a,"var(--s3)","Até 40 min"],[a,"var(--late)","Com atraso"]]}
   else if(VAR==="C"){const a=L.filter(g=>g.t==="Noite").length;segs=[[n-a,"var(--s3)","Dia"],[a,"var(--s5)","Noite"]]}
   else {const ds=new Set(L.map(g=>g.d)).size;segs=[[n,"var(--bar)",""]];extra=`<div class="lg">${ds} dia${ds===1?"":"s"} com PT</div><div class="lg">média de <b>${ds?nf.format(Math.round(n/ds*10)/10):0}</b> por dia</div>`}
-  const S=72,c=S/2,rr=28,w=9,C=2*Math.PI*rr;let off=0,arcs="";
+  const S=104,c=S/2,rr=43,w=10,C=2*Math.PI*rr;let off=0,arcs="";
   const tot=segs.reduce((a,s)=>a+s[0],0)||1, gap=segs.filter(s=>s[0]>0).length>1?2:0;
-  arcs+=`<circle cx="${c}" cy="${c}" r="${rr}" fill="none" style="stroke:var(--line)" stroke-width="${w}"/>`;
+  arcs+=`<circle cx="${c}" cy="${c}" r="${rr}" fill="none" style="stroke:var(--line);stroke-width:${w}px"/>`;
   segs.forEach(([v,col,lab])=>{if(!v)return;const len=Math.max(v/tot*C-gap,0.5);
-    arcs+=`<circle class="seg" cx="${c}" cy="${c}" r="${rr}" fill="none" style="stroke:${col}" stroke-width="${w}" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${c} ${c})"><title>${lab?lab+": ":""}${v} PT${v===1?"":"s"}</title></circle>`;off+=v/tot*C});
-  const fs=n>=1000?15:n>=100?18:20;
-  const svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" role="img" aria-label="${n} PTs liberadas">${arcs}<text class="ct" x="${c}" y="${c+2}" text-anchor="middle" font-size="${fs}">${n}</text><text class="cs" x="${c}" y="${c+14}" text-anchor="middle">PTs</text></svg>`;
+    arcs+=`<circle class="seg" cx="${c}" cy="${c}" r="${rr}" fill="none" style="stroke:${col};stroke-width:${w}px" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${c} ${c})"><title>${lab?lab+": ":""}${v} PT${v===1?"":"s"}</title></circle>`;off+=v/tot*C});
+  const fs=n>=1000?19:n>=100?24:26;
+  const svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" role="img" aria-label="${n} PTs liberadas">${arcs}<text class="ct" x="${c}" y="${c+4}" text-anchor="middle" style="font-size:${fs}px">${n}</text><text class="cs" x="${c}" y="${c+19}" text-anchor="middle">PTs</text></svg>`;
   const lg=VAR==="D"?extra:segs.map(([v,col,lab])=>`<div class="lg"><i style="background:${col}"></i>${lab} <b>${v}</b> <span style="color:var(--muted)">${n?Math.round(v/n*100):0}%</span></div>`).join("");
   el.innerHTML=svg+`<div><div class="cap">${cap}</div>${lg}</div>`;
   el.title="PTs liberadas no período filtrado. A mesma PT lançada por equipes diferentes conta uma vez. Canteiro e lançamentos sem número de PT ficam fora.";
