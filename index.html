@@ -528,7 +528,12 @@ function ptRing(R){
   el.innerHTML=svg+`<div><div class="cap">${cap}</div>${lg}</div>`;
   el.title="PTs liberadas no período filtrado. A mesma PT lançada por equipes diferentes conta uma vez. Canteiro e lançamentos sem número de PT ficam fora.";
 }
+// Local/TQ: só os locais com atividade no período filtrado (Paulo, 21/10)
+function updTq(){const L=[...new Set(DATA.filter(r=>r.d>=S.de&&r.d<=S.ate).map(r=>r.tq))].sort(tqOrd);
+  if(S.tq&&!L.includes(S.tq))S.tq="";
+  fTq.innerHTML=[["","Todos"],...L.map(t=>[t,tqName(t)])].map(([v,t])=>`<option value="${v}">${t}</option>`).join("");fTq.value=S.tq}
 function render(){
+  updTq();
   const R=DATA.filter(r=>r.d>=S.de&&r.d<=S.ate&&(!S.tq||r.tq===S.tq)&&(!S.turno||r.t===S.turno)&&S.disc.has(r.disc));
   ptRing(R);
   const nd=new Set(R.map(r=>r.d)).size;
