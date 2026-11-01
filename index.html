@@ -246,7 +246,7 @@ svg .lt{fill:var(--late)}
 .ptw .seg{transition:opacity .15s}
 .lay-cel .ptw{margin-left:0;width:100%;justify-content:flex-start}
 .mfd{font-size:12px;color:var(--muted);margin-top:4px}.mfd summary{cursor:pointer;display:inline-block;list-style:none;border:1px solid var(--line);border-radius:4px;padding:1px 7px}.mfd summary::-webkit-details-marker{display:none}.mfd summary::before{content:"ⓘ ";}.mfd[open] summary{margin-bottom:3px}
-.fmore{display:none}@media (max-width:699px){.fmore{display:block;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);background:none;border:0;border-top:1px solid var(--line);padding:10px 0;text-align:left;cursor:pointer;width:100%}.filters:not(.open) .fx{display:none}}
+.fmore{display:none}@media (max-width:699px){.fmore{display:block;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);background:none;border:0;border-top:1px solid var(--line);padding:10px 0;text-align:left;cursor:pointer;width:100%}.filters:not(.open) .fx .fg{display:none}}
 .cmp{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}.cmp:empty{display:none}.cmp .ct{margin:0 0 8px;font-size:12.5px;color:var(--ink2);font-weight:600}.cmp .cg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.cmp .ci{display:flex;flex-direction:column;gap:1px}.cmp .ci span{font-size:12px;color:var(--muted)}.cmp .ci b{font-size:18px;font-variant-numeric:tabular-nums}.cmp .ci small{font-size:12px;color:var(--ink2)}.cmp .ci small.bad{color:var(--crit)}.cmp .ci small.good{color:var(--ok)}.cmp .ci small i{font-style:normal;color:var(--muted)}@media (max-width:699px){.cmp .cg{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
@@ -336,9 +336,9 @@ const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agos
 const meses=[...new Set(days.map(d=>d.slice(0,7)))];
 const mesIni=m=>days.find(d=>d.startsWith(m)),mesFim=m=>days.filter(d=>d.startsWith(m)).pop();
 const fMes=document.getElementById("fMes");
-fMes.innerHTML=[`<option value="">Todos</option>`,...meses.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`)].join("");
+fMes.innerHTML=[`<option value="x" hidden>Período escolhido</option>`,`<option value="">Todos</option>`,...meses.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`)].join("");
 fMes.onchange=()=>{const m=fMes.value;if(m){S.de=mesIni(m);S.ate=mesFim(m)}else{S.de=days[0];S.ate=days[days.length-1]}sync();render()};
-function markMes(){const m=meses.find(m=>S.de===mesIni(m)&&S.ate===mesFim(m));fMes.value=m||""}
+function markMes(){const m=meses.find(m=>S.de===mesIni(m)&&S.ate===mesFim(m));fMes.value=m||(S.de===days[0]&&S.ate===days[days.length-1]?"":"x")}
 function markQk(){markMes();const L=days[days.length-1];document.querySelectorAll(".qk").forEach(b=>{const q=+b.dataset.q;const de=q===0?days[0]:(addD(L,1-q)<days[0]?days[0]:addD(L,1-q));b.classList.toggle("on",S.ate===L&&S.de===de)})}
 document.querySelectorAll(".qk").forEach(b=>b.onclick=()=>{const q=+b.dataset.q,L=days[days.length-1];
   S.ate=L;S.de=q===0?days[0]:addD(L,1-q);if(S.de<days[0])S.de=days[0];sync();render()});
@@ -349,7 +349,7 @@ const fTurno=document.getElementById("fTurno");
 const fDisc=document.getElementById("fDisc");
 fDisc.innerHTML=DISC.map(d=>`<button type="button" class="chip" aria-pressed="true" data-d="${d}"><i style="background:${dcol(d)}"></i>${cap(d)}</button>`).join("");
 function mesAtual(){const n=new Date(),m=n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0");return meses.includes(m)?m:meses[meses.length-1]}
-function reset(){const m=mesAtual();S.de=mesIni(m);S.ate=mesFim(m);S.tq="";S.turno="";S.disc=new Set(DISC);sync();render();}
+function reset(){const L=days[days.length-1];S.ate=L;S.de=addD(L,-6)<days[0]?days[0]:addD(L,-6);S.tq="";S.turno="";S.disc=new Set(DISC);sync();render();}
 function sync(){if(typeof markQk==="function")markQk();fDe.value=S.de;fAte.value=S.ate;fTq.value=S.tq;fTurno.value=S.turno;fDisc.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",S.disc.has(b.dataset.d)))}
 fDe.onchange=()=>{if(!fDe.value)return;S.de=fDe.value;if(S.ate<S.de){S.ate=S.de;fAte.value=S.ate}markQk();render()};
 fAte.onchange=()=>{if(!fAte.value)return;S.ate=fAte.value;if(S.de>S.ate){S.de=S.ate;fDe.value=S.de}markQk();render()};
