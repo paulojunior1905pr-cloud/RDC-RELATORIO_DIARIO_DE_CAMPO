@@ -245,6 +245,9 @@ svg .lt{fill:var(--late)}
 .ptw .lg b{color:var(--ink);font-weight:600}
 .ptw .seg{transition:opacity .15s}
 .lay-cel .ptw{margin-left:0;width:100%;justify-content:flex-start}
+.mfd{font-size:12px;color:var(--muted);margin-top:4px}.mfd summary{cursor:pointer;display:inline-block;list-style:none;border:1px solid var(--line);border-radius:4px;padding:1px 7px}.mfd summary::-webkit-details-marker{display:none}.mfd summary::before{content:"ⓘ ";}.mfd[open] summary{margin-bottom:3px}
+.fmore{display:none}@media (max-width:699px){.fmore{display:block;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);background:none;border:0;border-top:1px solid var(--line);padding:10px 0;text-align:left;cursor:pointer;width:100%}.filters:not(.open) .fx{display:none}}
+.cmp{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}.cmp:empty{display:none}.cmp .ct{margin:0 0 8px;font-size:12.5px;color:var(--ink2);font-weight:600}.cmp .cg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.cmp .ci{display:flex;flex-direction:column;gap:1px}.cmp .ci span{font-size:12px;color:var(--muted)}.cmp .ci b{font-size:18px;font-variant-numeric:tabular-nums}.cmp .ci small{font-size:12px;color:var(--ink2)}.cmp .ci small.bad{color:var(--crit)}.cmp .ci small.good{color:var(--ok)}.cmp .ci small i{font-style:normal;color:var(--muted)}@media (max-width:699px){.cmp .cg{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 <div class="wrap">
@@ -265,25 +268,27 @@ svg .lt{fill:var(--late)}
     <div class="fg fq"><span>Período rápido</span><div class="lay seg" role="group" aria-label="Período rápido"><button type="button" class="qk" data-q="1">Último dia</button><button type="button" class="qk" data-q="7">7 dias</button><button type="button" class="qk" data-q="0">Tudo</button></div></div>
     <div class="ptw" id="ptw"></div>
   </div>
-  <div class="frow">
+  <button type="button" class="fmore" id="fmore" aria-expanded="false">Mais filtros: TQ, turno e disciplina ▾</button>
+  <div class="frow fx">
     <label class="fg fs"><span>Local / TQ</span><select id="fTq"></select></label>
     <label class="fg fs"><span>Turno</span><select id="fTurno"><option value="">Todos</option><option>Dia</option><option>Noite</option></select></label>
     <button class="reset" id="reset" type="button">Limpar filtros</button>
   </div>
-  <div class="frow">
+  <div class="frow fx">
     <div class="fg fw"><span>Disciplina</span><div class="chips" id="fDisc"></div></div>
   </div>
 </section>
 
 <section class="kpis" id="kpis"></section>
+<section class="cmp" id="cmp"></section>
 
 <section class="grid">
   <div class="card wide"><p class="eyebrow">Espera</p><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez. Canteiro e movimentação de carga ficam fora.</p><div id="cDia"></div><p class="tapnote">Toque em um ponto para filtrar o dia; toque de novo para voltar.</p></div>
   <div class="card wide"><p class="eyebrow">Frentes de serviço</p><h2>Atividades por TQ e por dia</h2><p class="note">Quantas atividades cada local teve em cada dia (a mesma PT conta uma vez). Quanto mais escuro, mais atividades. O ponto laranja indica que houve atraso. Canteiro e movimentação de carga ficam fora.</p><div id="cMapa"></div><p class="tapnote">Toque em um quadro para filtrar o TQ e o dia; toque de novo para voltar.</p></div>
-  <div class="card"><p class="eyebrow">Espera</p><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média dos lançamentos. A linha tracejada marca 40 min. Canteiro e movimentação de carga ficam fora.</p><div id="cTq"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
-  <div class="card"><p class="eyebrow">Atrasos</p><h2>Atrasos por TQ</h2><p class="note">Parte das atividades liberada com 40 min ou mais após a chegada. A mesma PT lançada por equipes diferentes conta uma vez. Canteiro e movimentação de carga ficam fora.</p><div class="lgd"><span><i style="background:var(--late)"></i>Com atraso</span><span><i style="background:var(--ontime)"></i>Até 40 min</span></div><div id="cMot"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><p class="eyebrow">Espera</p><h2>Espera média por TQ</h2><p class="note">Minutos entre chegada e liberação, média por atividade (a mesma PT conta uma vez, pela maior espera). A linha tracejada marca 40 min. Canteiro e movimentação de carga ficam fora.</p><div id="cTq"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><p class="eyebrow">Atrasos</p><h2>Atrasos por TQ</h2><p class="note">Parte das atividades liberada com 40 min ou mais após a chegada. A mesma PT lançada por equipes diferentes conta uma vez. Ordenado pela quantidade de atividades com atraso. TQ com menos de 5 atividades aparece mais claro, porque o percentual ainda é pouco confiável. Canteiro e movimentação de carga ficam fora.</p><div class="lgd"><span><i style="background:var(--late)"></i>Com atraso</span><span><i style="background:var(--ontime)"></i>Até 40 min</span></div><div id="cMot"></div><p class="tapnote">Toque em um TQ para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card"><p class="eyebrow">Efetivo</p><h2>Efetivo por função</h2><p class="note">Quantos colaboradores diferentes atuaram em cada função no período filtrado; filtrando um dia, é o efetivo daquele dia. As funções menores ficam juntas em "Outras". Encarregados e supervisores não entram.</p><p class="kt" id="funTot"></p><div id="cFun"></div></div>
-  <div class="card"><p class="eyebrow">Disciplinas</p><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de atividades registradas no RDC.</p><div id="cDisc"></div><p class="tapnote">Toque em uma fatia ou disciplina para filtrar o painel; toque de novo para voltar.</p></div>
+  <div class="card"><p class="eyebrow">Disciplinas</p><h2>Lançamentos por disciplina</h2><p class="note">Quantidade de respostas registradas no RDC. A mesma PT lançada por equipes diferentes aparece mais de uma vez.</p><div id="cDisc"></div><p class="tapnote">Toque em uma fatia ou disciplina para filtrar o painel; toque de novo para voltar.</p></div>
   <div class="card wide ticker" id="ticker" hidden><div class="tk-head"><h2>Colaboradores nas atividades</h2><span class="note" id="tkNote"></span></div><div class="tk-viewport"><div class="tk-track" id="tkTrack"></div></div></div>
   <div class="card wide"><h2>Atividades</h2><p class="note" id="tblNote"></p><div class="cards" id="cards"></div><div class="tblwrap"><table><thead><tr><th>Data</th><th>Turno</th><th>TQ</th><th>Disciplina</th><th>Atividade</th><th>Chegada</th><th>Liberação</th><th>Espera</th><th>Efetivo</th></tr></thead><tbody id="tbody"></tbody></table></div></div>
 </section>
@@ -306,6 +311,8 @@ DATA.forEach(r=>{r.atr=!r.cant&&r.w!=null&&r.w>=LIMITE});
 DATA.forEach((r,i)=>{r.u=r.g!=null?"g"+r.g:"i"+i});
 const nAt=rs=>new Set(rs.map(r=>r.u)).size;
 const nAtr=rs=>new Set(rs.filter(r=>r.atr).map(r=>r.u)).size;
+const actW=rs=>{const m={};rs.forEach(r=>{if(r.w!=null&&!r.cant)m[r.u]=Math.max(m[r.u]??-1,r.w)});return Object.values(m)};
+const med=v=>{if(!v.length)return 0;const a=v.slice().sort((x,y)=>x-y),k=a.length>>1;return a.length%2?a[k]:(a[k-1]+a[k])/2};
 const DISC=["PINTURA","ELÉTRICA","COMPLEMENTAR","CALDEIRARIA","ISOLAMENTO","ANDAIMES","SOLDAGEM","MOVIMENTAÇÃO DE CARGA"];
 const dcol=d=>`var(--d${DISC.indexOf(d)+1||1})`;
 const cap=s=>s.charAt(0)+s.slice(1).toLowerCase();
@@ -352,6 +359,7 @@ fDisc.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const d=b.datas
   if(S.disc.size===DISC.length){S.disc=new Set([d])}else if(S.disc.has(d)){S.disc.delete(d);if(!S.disc.size)S.disc=new Set(DISC)}else S.disc.add(d);
   sync();render()};
 document.getElementById("reset").onclick=reset;
+{const fb=document.getElementById("fmore"),fs=fb.closest(".filters");fb.onclick=()=>{const o=fs.classList.toggle("open");fb.setAttribute("aria-expanded",o);fb.textContent=o?"Menos filtros ▴":"Mais filtros: TQ, turno e disciplina ▾"}}
 
 // tooltip
 const tip=document.getElementById("tip");
@@ -428,11 +436,11 @@ function areaChart(el,rows){ // rows: [label, value, tip, key]
   s+=`</g>`;
   const d=rows.map((r,i)=>(i?"L":"M")+X(i).toFixed(1)+","+sy(r[1]).toFixed(1)).join("");
   if(n>1)s+=`<path class="area" d="${d}L${X(n-1)},${sy(0)}L${X(0)},${sy(0)}Z"/><path class="line" d="${d}"/>`;
-  const peak=Math.max(...rows.map(r=>r[1])),showAll=bw>=44;
+  const peak=Math.max(...rows.map(r=>r[1])),showAll=bw>=44,lstep=Math.max(1,Math.ceil(46/bw)),pr0=bw<18?3.5:5;
   rows.forEach((r,i)=>{const x=X(i),y=sy(r[1]),k=r[3];
-    s+=`<g class="hov clk${isSel(k)?" sel":""}" data-tip="${esc(r[2])}" data-k="${esc(k)}"><line class="cross" x1="${x}" x2="${x}" y1="${pt}" y2="${sy(0)}"/><circle class="pt" cx="${x}" cy="${y}" r="5"/>`;
+    s+=`<g class="hov clk${isSel(k)?" sel":""}" data-tip="${esc(r[2])}" data-k="${esc(k)}"><line class="cross" x1="${x}" x2="${x}" y1="${pt}" y2="${sy(0)}"/><circle class="pt" cx="${x}" cy="${y}" r="${pr0}"/>`;
     if(showAll||r[1]===peak||i===n-1||isSel(k))s+=`<text class="val" x="${x}" y="${y-11}" text-anchor="middle">${nf.format(r[1])}</text>`;
-    s+=(bw>=40||i%2===(n-1)%2?`<text class="ax" x="${Math.min(Math.max(x,16),W-20)}" y="${H-7}" text-anchor="middle">${r[0]}</text>`:"")+`<rect class="hit" x="${x-bw/2}" y="${pt-10}" width="${bw}" height="${ih+10}"/></g>`});
+    s+=((n-1-i)%lstep===0?`<text class="ax" x="${Math.min(Math.max(x,18),W-22)}" y="${H-7}" text-anchor="middle">${r[0]}</text>`:"")+`<rect class="hit" x="${x-bw/2}" y="${pt-10}" width="${bw}" height="${ih+10}"/></g>`});
   el.innerHTML=s+`<line class="baseline" x1="${pl}" x2="${W-pr}" y1="${sy(0)}" y2="${sy(0)}"/></svg>`;
 }
 function lollipop(el,rows,ref){ // rows: [label, value, tip, key]
@@ -450,7 +458,7 @@ function stack100(el,rows){ // rows: [label, atrasos, total, tip, key]
   const W=el.clientWidth||520,lw=Math.min(110,Math.max(...rows.map(r=>r[0].length))*7.4+10),pr=112,rh=30,bh=16,H=rows.length*rh+4,bwid=W-lw-pr;
   let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
   rows.forEach((r,i)=>{const y=i*rh+rh/2,a=r[2]?r[1]/r[2]:0,wa=bwid*a;
-    s+=`<g class="hov clk${isSel(r[4])?" sel":""}" data-tip="${esc(r[3])}" data-k="${esc(r[4])}"><text x="0" y="${y+4}">${esc(r[0])}</text>`;
+    s+=`<g class="hov clk${isSel(r[4])?" sel":""}" data-tip="${esc(r[3])}" data-k="${esc(r[4])}"${r[5]?' opacity=".45"':""}><text x="0" y="${y+4}">${esc(r[0])}</text>`;
     s+=`<rect class="seg" x="${lw}" y="${y-bh/2}" width="${bwid}" height="${bh}" rx="5" fill="var(--ontime)"/>`;
     if(wa>0)s+=`<rect class="seg" x="${lw}" y="${y-bh/2}" width="${Math.max(wa,4)}" height="${bh}" rx="5" fill="var(--late)"/>`;
     s+=`<text class="val" x="${lw+bwid+8}" y="${y+4}">${Math.round(a*100)}%</text><text class="ax" x="${W}" y="${y+4}" text-anchor="end">${r[1]} de ${r[2]}</text><rect class="hit" x="0" y="${y-rh/2}" width="${W}" height="${rh}"/></g>`});
@@ -490,26 +498,34 @@ function treemap(el,rows){ // rows: [label, value, tip] (ordenadas do maior para
     s+=`</g>`});
   el.innerHTML=s+`</svg>`;
 }
-function heatmap(el,tqs,ds,cell){ // cell(t,d) -> {n, atr, tip}
+function heatmap(el,tqs,ds,dim,cell){ // cell(t,d) -> {n, atr, tip}
   if(!tqs.length||!ds.length){el.innerHTML=EMPTY;return}
   const W=el.clientWidth||900,lw=Math.min(90,Math.max(...tqs.map(t=>tqName(t).length))*7.2+10),top=20;
-  const cw=Math.max(18,(W-lw)/ds.length),ch=30,H=top+tqs.length*ch+4,Wt=lw+cw*ds.length;
-  let mx=1;tqs.forEach(t=>ds.forEach(d=>{mx=Math.max(mx,cell(t,d).n)}));
+  let H;const cw=Math.max(26,(W-lw)/ds.length),ch=30,Wg=cw*ds.length,over=lw+Wg>W+1;
+  H=top+tqs.length*ch+4;let mx=1;tqs.forEach(t=>ds.forEach(d=>{mx=Math.max(mx,cell(t,d).n)}));
   const steps=["--s1","--s2","--s3","--s4","--s5"],step=n=>steps[Math.min(4,Math.ceil(n/mx*5)-1)];
-  let s=`<div style="overflow-x:auto"><svg width="${Wt}" height="${H}" viewBox="0 0 ${Wt} ${H}" role="img">`;
-  ds.forEach((d,j)=>{if(cw>=30||j%2===(ds.length-1)%2)s+=`<text class="ax" x="${Math.min(lw+cw*j+cw/2,Wt-18)}" y="12" text-anchor="middle">${fmtD(d)}</text>`});
-  tqs.forEach((t,i)=>{const y=top+i*ch;s+=`<text x="0" y="${y+ch/2+4}">${esc(tqName(t))}</text>`;
-    ds.forEach((d,j)=>{const c=cell(t,d),x=lw+cw*j,k="tqd:"+t+"|"+d;
+  let L="";
+  const gapY=i=>dim.size&&dim.size<tqs.length&&dim.has(tqs[i])?22:0,Y=i=>top+i*ch+gapY(i);H+=dim.size&&dim.size<tqs.length?22:0;
+  tqs.forEach((t,i)=>{L+=`<text x="0" y="${Y(i)+ch/2+4}"${dim.has(t)?' opacity=".5"':""}>${esc(tqName(t))}</text>`});
+  const fi=tqs.findIndex(t=>dim.has(t));if(gapY(fi))L+=`<text class="ax" x="0" y="${top+fi*ch+15}">Sem atividade nos últimos 7 dias</text>`;L=`<svg width="${lw}" height="${H}" viewBox="0 0 ${lw} ${H}" role="img" style="overflow:visible">`+L+`</svg>`;
+  let s=`<svg width="${Wg}" height="${H}" viewBox="0 0 ${Wg} ${H}" role="img">`;
+  const lst=Math.max(1,Math.ceil(44/cw));
+  ds.forEach((d,j)=>{if((ds.length-1-j)%lst===0)s+=`<text class="ax" x="${Math.min(Math.max(cw*j+cw/2,18),Wg-18)}" y="12" text-anchor="middle">${fmtD(d)}</text>`});
+  tqs.forEach((t,i)=>{const y=Y(i);
+    ds.forEach((d,j)=>{const c=cell(t,d),x=cw*j,k="tqd:"+t+"|"+d;
       if(!c.n){s+=`<rect x="${x+1}" y="${y+1}" width="${cw-2}" height="${ch-2}" rx="4" fill="var(--bg)"/>`;return}
-      const st=step(c.n),dark=st==="--s4"||st==="--s5";
+      const st=step(c.n);
       s+=`<g class="hov clk${isSel(k)?" sel":""}" data-tip="${esc(c.tip)}" data-k="${esc(k)}"><rect class="hm" x="${x+1}" y="${y+1}" width="${cw-2}" height="${ch-2}" rx="4" fill="var(${st})"/>`;
       if(cw>=22)s+=`<text class="hmv" x="${x+cw/2}" y="${y+ch/2+4}" text-anchor="middle" style="fill:var(--t${st.slice(3)})">${c.n}</text>`;
       if(c.atr)s+=`<circle class="lt" cx="${x+cw-5}" cy="${y+5}" r="${cw<30?2.5:3}"/>`;
       s+=`</g>`})});
-  el.innerHTML=s+`</svg></div>`;
+  el.innerHTML=`<div style="display:flex">${L}<div class="hmsc" style="overflow-x:auto;flex:1">${s}</svg></div></div>`+(over?`<p class="tapnote" style="margin-top:6px">Mostrando os dias mais recentes. Arraste para a direita para ver os anteriores.</p>`:"");
+  const sc=el.querySelector(".hmsc");if(over)sc.scrollLeft=sc.scrollWidth;
 }
 
 const mfTxt=r=>"";
+const amTag=r=>{if(!r.am)return "";const m=/^(\d+) colaborador/.exec(r.am);if(!m)return `<div class="av">Aviso: ${esc(r.am)}</div>`;const n=+m[1];
+  return `<details class="mfd"><summary>${n} também em outra frente no dia</summary>${esc(r.am)}</details>`};
 const VAR="A";
 function ptRing(R){
   const el=document.getElementById("ptw");if(!el)return;
@@ -541,21 +557,34 @@ function render(){
   const nd=new Set(R.map(r=>r.d)).size;
   const pessoas=R.reduce((a,r)=>a+Object.values(r.f).reduce((x,y)=>x+y,0),0);
   const hh=R.reduce((a,r)=>a+hhOf(r),0);
-  const ws=R.filter(r=>r.w!=null), wm=ws.length?ws.reduce((a,r)=>a+r.w,0)/ws.length:0;
+  const ws=R.filter(r=>r.w!=null), aw=actW(R), wm=aw.length?aw.reduce((a,b)=>a+b,0)/aw.length:0, wmed=med(aw);
   const multi=R.reduce((a,r)=>a+(r.mfn||0),0);
   const RC=R.filter(r=>!r.cant), nRC=nAt(RC), atr=nAtr(RC), pa=nRC?atr/nRC*100:0, nA=nAt(R);
   const dsel=days.filter(d=>d>=S.de&&d<=S.ate);
   const SP=[[],[],[],[],[]];dsel.forEach(d=>{const x=R.filter(r=>r.d===d);if(!x.length)return;const xc=x.filter(r=>!r.cant),xw=x.filter(r=>r.w!=null);
     SP[0].push(nAt(x));SP[1].push(x.reduce((a,r)=>a+Object.values(r.f).reduce((p,q)=>p+q,0),0));SP[2].push(x.reduce((a,r)=>a+hhOf(r),0));
-    SP[3].push(xw.length?xw.reduce((a,r)=>a+r.w,0)/xw.length:0);SP[4].push(nAt(xc)?nAtr(xc)/nAt(xc)*100:0)});
+    {const v=actW(x);SP[3].push(v.length?v.reduce((a,b)=>a+b,0)/v.length:0)}SP[4].push(nAt(xc)?nAtr(xc)/nAt(xc)*100:0)});
   document.getElementById("kpis").innerHTML=[
     ["",nA,"atividades",`${R.length} lançamento${R.length===1?"":"s"}${R.length>nA?" (mesma PT conta uma vez)":""} · ${nd} dia${nd===1?"":"s"} · ${new Set(R.map(r=>r.tq)).size} locais`],
-    ["",nd?nf.format(pessoas/nd):"0","pessoas de campo por dia",`sem repetir nomes; ${multi} em mais de uma frente`],
+    ["",nd?nf.format(pessoas/nd):"0","pessoas de campo por dia",`sem repetir nomes; em média ${nd?nf.format(Math.round(multi/nd*10)/10):0} por dia em mais de uma frente`],
     [hh>0?"alert":"",nf.format(hh),"horas-homem aguardando","sem contar a mesma pessoa duas vezes"],
-    ["",Math.round(wm)+" min","espera média","chegada até liberação"],
+    ["",Math.round(wm)+" min","espera média",`mediana ${Math.round(wmed)} min; por atividade, da chegada até a liberação`],
     [pa>=50?"alert":"",Math.round(pa)+"%","com atraso (liberação ≥ 40 min)",`${atr} de ${nRC} atividades, sem canteiro e movimentação de carga`]
   ].map((k,i)=>`<div class="kpi ${k[0]}"><b>${k[1]}</b><span>${k[2]}</span><small>${k[3]}</small>${spark(SP[i])}</div>`).join("");
 
+
+  // comparação: últimos 7 dias do período x 7 dias anteriores
+  {const sh=(d,k)=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()+k);return x.toISOString().slice(0,10)};
+   const fl=(a,b)=>DATA.filter(r=>r.d>=a&&r.d<=b&&(!S.tq||r.tq===S.tq)&&(!S.turno||r.t===S.turno)&&S.disc.has(r.disc));
+   const mt=x=>{const c=x.filter(r=>!r.cant),aw=actW(x),n=nAt(c);return {at:nAt(x),hh:x.reduce((a,r)=>a+hhOf(r),0),es:aw.length?aw.reduce((a,b)=>a+b,0)/aw.length:null,pa:n?nAtr(c)/n*100:null}};
+   const A=fl(sh(S.ate,-6),S.ate),B=fl(sh(S.ate,-13),sh(S.ate,-7)),el=document.getElementById("cmp");
+   if(!A.length||!B.length){el.innerHTML="";}else{const a=mt(A),b=mt(B);
+    const it=(lab,va,vb,fmt,unit,badUp)=>{if(va==null||vb==null)return "";const df=va-vb,up=df>0,eq=Math.abs(df)<(unit==="pp"?1:0.5);
+      const cls=eq||badUp==null?"":(up===badUp?"bad":"good"),ar=eq?"=":up?"▲":"▼",dt=unit==="pp"?`${up?"+":""}${Math.round(df)} p.p.`:(vb?`${up?"+":""}${Math.round(df/vb*100)}%`:"");
+      return `<div class="ci"><span>${lab}</span><b>${fmt(va)}</b><small class="${cls}">${ar} ${eq?"igual":dt} <i>(antes ${fmt(vb)})</i></small></div>`};
+    el.innerHTML=`<p class="ct">Últimos 7 dias (${fmtD(sh(S.ate,-6))} a ${fmtD(S.ate)}) comparados com os 7 dias anteriores</p><div class="cg">`+
+     it("Atividades",a.at,b.at,v=>v,"%",null)+it("HH aguardando",a.hh,b.hh,v=>nf.format(Math.round(v*10)/10),"%",true)+
+     it("Espera média",a.es,b.es,v=>Math.round(v)+" min","%",true)+it("Com atraso",a.pa,b.pa,v=>Math.round(v)+"%","pp",true)+`</div>`}}
 
   // por dia
   const byD=days.filter(d=>d>=S.de&&d<=S.ate).map(d=>{const x=R.filter(r=>r.d===d);const h=x.reduce((a,r)=>a+hhOf(r),0);
@@ -563,18 +592,20 @@ function render(){
   areaChart(document.getElementById("cDia"),byD);
 
   // mapa TQ x dia
-  const mds=dsel.filter(d=>R.some(r=>r.d===d)),mtq=[...new Set(R.filter(r=>!r.cant).map(r=>r.tq))].sort(tqOrd);
-  heatmap(document.getElementById("cMapa"),mtq,mds,(t,d)=>{const x=R.filter(r=>r.tq===t&&r.d===d),n=nAt(x),a=nAtr(x);
+  const mds=dsel.filter(d=>R.some(r=>r.d===d)),mtq0=[...new Set(R.filter(r=>!r.cant).map(r=>r.tq))].sort(tqOrd);
+  const lim7=(()=>{const x=new Date(S.ate+"T12:00:00");x.setDate(x.getDate()-6);return x.toISOString().slice(0,10)})();
+  const rec=new Set(R.filter(r=>!r.cant&&r.d>=lim7).map(r=>r.tq)),mtq=[...mtq0.filter(t=>rec.has(t)),...mtq0.filter(t=>!rec.has(t))],dimTq=new Set(mtq0.filter(t=>!rec.has(t)));
+  heatmap(document.getElementById("cMapa"),mtq,mds,dimTq,(t,d)=>{const x=R.filter(r=>r.tq===t&&r.d===d),n=nAt(x),a=nAtr(x);
     return {n,atr:a,tip:`<b>${tqName(t)} · ${fmtD(d)}</b><br>${n} atividade${n===1?"":"s"}${t==="CANTEIRO"?"":` · ${a} com atraso`}<br>${x.reduce((p,r)=>p+(r.mo||0),0)} pessoas lançadas`}});
 
   // por TQ
-  const tqm={};ws.forEach(r=>{(tqm[r.tq]=tqm[r.tq]||[]).push(r.w)});
+  const tqm={},tqg={};ws.filter(r=>!r.cant).forEach(r=>{(tqg[r.tq]=tqg[r.tq]||[]).push(r)});Object.entries(tqg).forEach(([t,x])=>tqm[t]=actW(x));
   lollipop(document.getElementById("cTq"),Object.entries(tqm).map(([t,v])=>{const m=v.reduce((a,b)=>a+b,0)/v.length;
-    return [tqName(t),Math.round(m),`<b>${tqName(t)}</b><br>${Math.round(m)} min em média<br>${v.length} lançamentos, maior espera ${Math.max(...v)} min`,"tq:"+t]}).sort((a,b)=>b[1]-a[1]),LIMITE);
+    return [tqName(t),Math.round(m),`<b>${tqName(t)}</b><br>${Math.round(m)} min em média<br>mediana ${Math.round(med(v))} min<br>${v.length} atividade${v.length===1?"":"s"}, maior espera ${Math.max(...v)} min`,"tq:"+t]}).sort((a,b)=>b[1]-a[1]),LIMITE);
 
   // motivos
   const at={},lt={},gt={};R.filter(r=>!r.cant&&r.w!=null).forEach(r=>(gt[r.tq]=gt[r.tq]||[]).push(r));Object.entries(gt).forEach(([t,x])=>{lt[t]=nAt(x);const n=nAtr(x);if(n)at[t]=n});
-  stack100(document.getElementById("cMot"),Object.keys(lt).map(t=>[t,at[t]||0,lt[t]]).sort((a,b)=>b[1]/b[2]-a[1]/a[2]||b[2]-a[2]).map(([t,n,N])=>[tqName(t),n,N,`<b>${tqName(t)}</b><br>${n} de ${N} atividades com 40 min ou mais (${Math.round(n/N*100)}%)<br>${N-n} liberadas em até 40 min`,"tq:"+t]));
+  stack100(document.getElementById("cMot"),Object.keys(lt).map(t=>[t,at[t]||0,lt[t]]).sort((a,b)=>b[1]-a[1]||b[1]/b[2]-a[1]/a[2]).map(([t,n,N])=>[tqName(t),n,N,`<b>${tqName(t)}</b><br>${n} de ${N} atividades com 40 min ou mais (${Math.round(n/N*100)}%)<br>${N-n} liberadas em até 40 min`+(N<5?"<br>Poucas atividades: percentual pouco confiável":""),"tq:"+t,N<5]));
 
   // funções
   const fu={};R.forEach(r=>Object.entries(r.f).forEach(([k,v])=>fu[k]=(fu[k]||0)+v));
@@ -604,11 +635,11 @@ function render(){
   const fnOf=r=>Object.entries(r.fa||r.f).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v} ${k.charAt(0).toLowerCase()+k.slice(1)}`).join(" · ");
   document.getElementById("tbody").innerHTML=rows.length?rows.map(r=>{const fn=fnOf(r);
     return `<tr><td class="n">${fmtD(r.d)}</td><td>${r.t}</td><td class="n">${esc(tqName(r.tq))}</td><td><span class="tag"><i style="background:${dcol(r.disc)}"></i>${cap(r.disc)}</span></td>
-    <td class="a">${esc(r.a)}${r.crit==="AMARELA"?' <span class="pill am">PT amarela</span>':""}${fn?`<div class="fn">${esc(fn)}${mfTxt(r)}</div>`:""}${r.av?`<div class="av">Aviso: ${esc(r.av)}</div>`:""}${r.am?`<div class="av">Aviso: ${esc(r.am)}</div>`:""}</td>
+    <td class="a">${esc(r.a)}${r.crit==="AMARELA"?' <span class="pill am">PT amarela</span>':""}${fn?`<div class="fn">${esc(fn)}${mfTxt(r)}</div>`:""}${r.av?`<div class="av">Aviso: ${esc(r.av)}</div>`:""}${amTag(r)}</td>
     <td class="n">${r.ch||"–"}</td><td class="n">${r.lib||"–"}</td><td class="n">${r.cant?"fora da conta":r.w!=null?r.w+" min":"–"} ${r.atr?'<span class="pill late">atraso</span>':""}</td><td class="n">${r.mo||"–"}</td></tr>`}).join(""):'<tr><td colspan="9" class="empty">Nenhuma atividade com estes filtros.</td></tr>';
-  CARDROWS=rows;shown=30;drawCards();
+  CARDROWS=rows;shown=MOB?10:30;drawCards();
 }
-let CARDROWS=[],shown=30;
+const MOB=innerWidth<700;let CARDROWS=[],shown=MOB?10:30;
 function drawCards(){const el=document.getElementById("cards");
   if(!CARDROWS.length){el.innerHTML='<div class="empty">Nenhuma atividade com estes filtros.</div>';return}
   let h="",last="";
@@ -616,10 +647,10 @@ function drawCards(){const el=document.getElementById("cards");
     if(r.d!==last){last=r.d;h+=`<div class="dhead">${fmtD(r.d)}, ${new Date(r.d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long"})}</div>`}
     const fn=Object.entries(r.fa||r.f).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v} ${k.charAt(0).toLowerCase()+k.slice(1)}`).join(" · ");
     h+=`<div class="ac"><div class="top"><b>${esc(tqName(r.tq))}</b><span class="tag"><i style="background:${dcol(r.disc)}"></i>${cap(r.disc)}</span><span>${r.t}</span>${r.crit==="AMARELA"?'<span class="pill am">PT amarela</span>':""}${r.atr?'<span class="pill late">atraso</span>':""}</div>
-    <div class="txt">${esc(r.a)}</div>${fn?`<div class="fn">${esc(fn)}${mfTxt(r)}</div>`:""}${r.av?`<div class="av">Aviso: ${esc(r.av)}</div>`:""}${r.am?`<div class="av">Aviso: ${esc(r.am)}</div>`:""}
+    <div class="txt">${esc(r.a)}</div>${fn?`<div class="fn">${esc(fn)}${mfTxt(r)}</div>`:""}${r.av?`<div class="av">Aviso: ${esc(r.av)}</div>`:""}${amTag(r)}
     <div class="meta"><span>Chegada ${r.ch||"–"}</span><span>Liberação ${r.lib||"–"}</span><span>Espera ${r.cant?"fora da conta":r.w!=null?r.w+" min":"–"}</span><span>Efetivo ${r.mo||"–"}</span></div></div>`});
   if(CARDROWS.length>shown)h+=`<button type="button" class="more" id="more">Mostrar mais (${CARDROWS.length-shown} restantes)</button>`;
-  el.innerHTML=h;const m=document.getElementById("more");if(m)m.onclick=()=>{shown+=30;drawCards()};
+  el.innerHTML=h;const m=document.getElementById("more");if(m)m.onclick=()=>{shown+=MOB?20:30;drawCards()};
 }
 // tema: segue o aparelho até a pessoa escolher
 let THEME=null;try{THEME=localStorage.getItem("rdc-tema")}catch(e){}
