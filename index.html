@@ -280,7 +280,6 @@ svg .lt{fill:var(--late)}
 </section>
 
 <section class="kpis" id="kpis"></section>
-<section class="cmp" id="cmp"></section>
 
 <section class="grid">
   <div class="card wide"><p class="eyebrow">Espera</p><h2>Horas-homem aguardando liberação, por dia</h2><p class="note">Tempo entre a chegada da equipe e a última liberação (operação, SMS ou resgate), somado por pessoa. Quem esteve em mais de uma frente no dia conta uma vez. Canteiro e movimentação de carga ficam fora.</p><div id="cDia"></div><p class="tapnote">Toque em um ponto para filtrar o dia; toque de novo para voltar.</p></div>
@@ -572,19 +571,6 @@ function render(){
     [pa>=50?"alert":"",Math.round(pa)+"%","com atraso (liberação ≥ 40 min)",`${atr} de ${nRC} atividades, sem canteiro e movimentação de carga`]
   ].map((k,i)=>`<div class="kpi ${k[0]}"><b>${k[1]}</b><span>${k[2]}</span><small>${k[3]}</small>${spark(SP[i])}</div>`).join("");
 
-
-  // comparação: últimos 7 dias do período x 7 dias anteriores
-  {const sh=(d,k)=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()+k);return x.toISOString().slice(0,10)};
-   const fl=(a,b)=>DATA.filter(r=>r.d>=a&&r.d<=b&&(!S.tq||r.tq===S.tq)&&(!S.turno||r.t===S.turno)&&S.disc.has(r.disc));
-   const mt=x=>{const c=x.filter(r=>!r.cant),aw=actW(x),n=nAt(c);return {at:nAt(x),hh:x.reduce((a,r)=>a+hhOf(r),0),es:aw.length?aw.reduce((a,b)=>a+b,0)/aw.length:null,pa:n?nAtr(c)/n*100:null}};
-   const A=fl(sh(S.ate,-6),S.ate),B=fl(sh(S.ate,-13),sh(S.ate,-7)),el=document.getElementById("cmp");
-   if(!A.length||!B.length){el.innerHTML="";}else{const a=mt(A),b=mt(B);
-    const it=(lab,va,vb,fmt,unit,badUp)=>{if(va==null||vb==null)return "";const df=va-vb,up=df>0,eq=Math.abs(df)<(unit==="pp"?1:0.5);
-      const cls=eq||badUp==null?"":(up===badUp?"bad":"good"),ar=eq?"=":up?"▲":"▼",dt=unit==="pp"?`${up?"+":""}${Math.round(df)} p.p.`:(vb?`${up?"+":""}${Math.round(df/vb*100)}%`:"");
-      return `<div class="ci"><span>${lab}</span><b>${fmt(va)}</b><small class="${cls}">${ar} ${eq?"igual":dt} <i>(antes ${fmt(vb)})</i></small></div>`};
-    el.innerHTML=`<p class="ct">Últimos 7 dias (${fmtD(sh(S.ate,-6))} a ${fmtD(S.ate)}) comparados com os 7 dias anteriores</p><div class="cg">`+
-     it("Atividades",a.at,b.at,v=>v,"%",null)+it("HH aguardando",a.hh,b.hh,v=>nf.format(Math.round(v*10)/10),"%",true)+
-     it("Espera média",a.es,b.es,v=>Math.round(v)+" min","%",true)+it("Com atraso",a.pa,b.pa,v=>Math.round(v)+"%","pp",true)+`</div>`}}
 
   // por dia
   const byD=days.filter(d=>d>=S.de&&d<=S.ate).map(d=>{const x=R.filter(r=>r.d===d);const h=x.reduce((a,r)=>a+hhOf(r),0);
