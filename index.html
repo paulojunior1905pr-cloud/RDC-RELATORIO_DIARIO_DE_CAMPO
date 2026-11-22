@@ -658,4 +658,97 @@ document.getElementById("upd").textContent=`dados até ${UPDATED}`;
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{applyLay();render()},150)});
 reset();
 </script>
+<!-- Melhorias 22/11 (Paulo): destaques do período, gráfico de HH por dia/semana, data e hora da atualização, botões Excel e PDF -->
+<style>
+.hx{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.hx .stamp{font-size:12px;color:#dbe6ff;background:rgba(255,255,255,.12);border-radius:999px;padding:3px 10px}
+.hx .stamp b{color:#fff}
+.xbtn{font:inherit;font-size:12.5px;font-weight:600;border:1px solid var(--base);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.xbtn:hover{border-color:var(--ink2)}
+.xbar{display:flex;gap:8px;margin-left:auto}
+.hl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hl div{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--ink2);border-left:3px solid var(--bar)}
+.hl div.w{border-left-color:var(--late,#e8890c)}.hl div.g{border-left-color:var(--ok)}
+.hl b{color:var(--ink)}
+.lay-cel .hl{grid-template-columns:minmax(0,1fr)}
+@media (max-width:699px){.hl{grid-template-columns:minmax(0,1fr)}.xbar{margin-left:0}}
+.ch-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.seg2{display:inline-flex;border:1px solid var(--base);border-radius:8px;overflow:hidden}
+.seg2 button{font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;background:var(--surface);color:var(--ink2);border:0;cursor:pointer}
+.seg2 button[aria-pressed="true"]{background:var(--bar);color:#fff}
+.printinfo{display:none}
+@media print{
+ body{background:#fff}.toolbar,.xbar,.reset,.fmore,.tapnote,.seg2,.filters,.ticker{display:none!important}
+ .printinfo{display:block;font-size:12px;color:#333;margin:4px 0 8px}
+ .card,.kpi{break-inside:avoid;box-shadow:none}.wrap{max-width:none;padding:0}
+}
+</style>
+<script>
+(function(){
+const UPD_TS="22/11 às 20:47";
+document.querySelector('.ttl .sub').insertAdjacentHTML('afterend',`<div class="hx"><span class="stamp">Atualizado em <b>${UPD_TS}</b></span></div>`);
+const rs=document.querySelector('.filters .reset');
+rs.insertAdjacentHTML('beforebegin',`<div class="xbar"><button class="xbtn" id="bXls" type="button">⬇ Excel</button><button class="xbtn" id="bPdf" type="button">🖨 PDF</button></div>`);rs.style.marginLeft='0';
+document.querySelector('.filters').insertAdjacentHTML('afterend',`<p class="printinfo" id="pinfo"></p>`);
+document.getElementById('kpis').insertAdjacentHTML('beforebegin',`<section class="card wide"><p class="eyebrow">Destaques do período</p><div class="hl" id="hl"></div></section>`);
+// botão dia/semana no gráfico de HH
+const cd=document.getElementById('cDia').closest('.card');
+const h2=cd.querySelector('h2');
+const head=document.createElement('div');head.className='ch-head';h2.replaceWith(head);
+head.innerHTML=`<h2 id="hhT">Horas-homem aguardando liberação, por dia</h2><div class="seg2" role="group" aria-label="Agrupar"><button type="button" data-m="d" aria-pressed="true">Por dia</button><button type="button" data-m="s" aria-pressed="false">Por semana</button></div>`;
+let MODO=window.__MODO||'d';
+head.querySelectorAll('.seg2 button').forEach(b=>b.onclick=()=>{MODO=b.dataset.m;render()});
+const addD=(iso,n)=>{const x=new Date(iso+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const mon=iso=>{const x=new Date(iso+"T12:00:00");return addD(iso,-((x.getDay()+6)%7))};
+const filt=()=>DATA.filter(r=>r.d>=S.de&&r.d<=S.ate&&(!S.tq||r.tq===S.tq)&&(!S.turno||r.t===S.turno)&&S.disc.has(r.disc));
+document.addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('[data-k^="wk:"]');if(!g)return;const s=g.dataset.k.slice(3);
+  S.de=s<days[0]?days[0]:s;S.ate=addD(s,6)>days[days.length-1]?days[days.length-1]:addD(s,6);MODO='d';sync();render()});
+const orig=window.render;
+window.render=render=function(){orig();extra()};
+function weekBars(el,rows){if(!rows.length){el.innerHTML=EMPTY;return}
+ const W=el.clientWidth||900,H=250,pl=40,pr=10,pt=24,pb=40,ih=H-pt-pb,n=rows.length,bw=(W-pl-pr)/n,sm=W<560;
+ const mx=niceMax(Math.max(...rows.map(r=>r[1]))),sy=v=>pt+ih-ih*v/mx;
+ let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><g class="grid">`;
+ for(let k=0;k<=4;k++){const v=mx*k/4,y=sy(v);s+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}"/><text class="ax" x="${pl-6}" y="${y+4}" text-anchor="end">${nf.format(v)}</text>`}
+ s+='</g>';
+ rows.forEach((r,i)=>{const x=pl+bw*i+bw*.15,w=bw*.7,y=sy(r[1]),cx=x+w/2;
+  s+=`<g class="hov clk${isSel(r[3])?' sel':''}" data-tip="${esc(r[2])}" data-k="${esc(r[3])}"><rect x="${x}" y="${y}" width="${w}" height="${Math.max(sy(0)-y,r[1]>0?2:0)}" rx="3" fill="var(--bar)" opacity="${r[4]?.4:.9}"/>`+
+   `<text class="val" x="${cx}" y="${y-6}" text-anchor="middle" style="${sm?'font-size:10px':''}">${nf.format(Math.round(r[1]))}</text>`+
+   `<text class="ax" x="${cx}" y="${H-pb+15}" text-anchor="middle" style="${sm?'font-size:9.5px':''}">${r[0]}</text>${r[4]?`<text class="ax" x="${cx}" y="${H-pb+28}" text-anchor="middle" style="font-size:${sm?9:10.5}px">parcial</text>`:''}`+
+   `<rect class="hit" x="${pl+bw*i}" y="${pt-10}" width="${bw}" height="${ih+10}" fill="transparent"/></g>`});
+ el.innerHTML=s+`<line class="baseline" x1="${pl}" x2="${W-pr}" y1="${sy(0)}" y2="${sy(0)}"/></svg>`;
+}
+function extra(){
+ const R=filt();
+ head.querySelectorAll('.seg2 button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===MODO));
+ document.getElementById('hhT').textContent='Horas-homem aguardando liberação, '+(MODO==='s'?'por semana':'por dia');
+ cd.querySelector('.tapnote').textContent=MODO==='s'?'Semanas de segunda a domingo; a data é o início da semana. Barra clara = semana incompleta no período. Toque em uma semana para ver os dias dela.':'Toque em um ponto para filtrar o dia; toque de novo para voltar.';
+ if(MODO==='s'){const W={};R.forEach(r=>{const m=mon(r.d);(W[m]=W[m]||[]).push(r)});
+  const rows=Object.keys(W).sort().map(m=>{const x=W[m],h=x.reduce((a,r)=>a+hhOf(r),0),nd=new Set(x.map(r=>r.d)).size,e=addD(m,6),part=m<S.de||m<days[0]||e>S.ate||e>days[days.length-1];
+   return [fmtD(m),Math.round(h*10)/10,`<b>Semana ${fmtD(m)} a ${fmtD(e)}</b>${part?' (parcial)':''}<br>${nf.format(h)} HH aguardando<br>${nd} dia${nd===1?'':'s'} com atividade · média ${nf.format(nd?h/nd:0)} HH/dia<br>${nAt(x)} atividades · ${nAtr(x)} com atraso`,'wk:'+m,part]});
+  weekBars(document.getElementById('cDia'),rows);}
+ // destaques
+ const byT={};R.filter(r=>!r.cant).forEach(r=>byT[r.tq]=(byT[r.tq]||0)+hhOf(r));
+ const tq=Object.entries(byT).sort((a,b)=>b[1]-a[1]),tot=R.reduce((a,r)=>a+hhOf(r),0);
+ const byD={};R.forEach(r=>byD[r.d]=(byD[r.d]||0)+hhOf(r));const dw=Object.entries(byD).sort((a,b)=>b[1]-a[1]);
+ const wt={};R.filter(r=>!r.cant&&r.w!=null).forEach(r=>(wt[r.tq]=wt[r.tq]||[]).push(r));
+ const best=Object.entries(wt).map(([t,x])=>{const v=actW(x);return [t,v.reduce((a,b)=>a+b,0)/v.length,v.length]}).filter(e=>e[2]>=2).sort((a,b)=>a[1]-b[1])[0];
+ const h=[];
+ if(tq.length&&tot>0)h.push(['w',`<b>${tqName(tq[0][0])}</b> concentrou <b>${nf.format(tq[0][1])} HH</b> aguardando (${Math.round(tq[0][1]/tot*100)}% do período).`]);
+ if(dw.length>1&&dw[0][1]>0)h.push(['',`Pior dia: <b>${fmtD(dw[0][0])}</b>, com <b>${nf.format(dw[0][1])} HH</b> aguardando.`]);
+ if(best)h.push(['g',`Menor espera: <b>${tqName(best[0])}</b>, com média de <b>${Math.round(best[1])} min</b> entre chegada e liberação (${best[2]} atividades).`]);
+ document.getElementById('hl').innerHTML=h.map(([c,t])=>`<div class="${c}">${t}</div>`).join('')||'<div>Sem espera registrada no período.</div>';
+ document.getElementById('hl').closest('.card').hidden=!h.length;
+ document.getElementById('pinfo').textContent=`Filtro: ${fmtD(S.de)}/${S.de.slice(0,4)} a ${fmtD(S.ate)}/${S.ate.slice(0,4)} · ${S.tq?tqName(S.tq):'todos os locais'} · ${S.turno||'todos os turnos'} · ${S.disc.size===DISC.length?'todas as disciplinas':[...S.disc].map(cap).join(', ')} · atualizado em ${UPD_TS}`;
+}
+document.getElementById('bPdf').onclick=()=>window.print();
+document.getElementById('bXls').onclick=()=>{
+ const q=v=>{v=v==null?'':String(v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+ const L=[['Data','Turno','Local/TQ','Disciplina','Atividade','Criticidade da PT','Chegada','Liberação','Espera (min)','Atraso (≥40 min)','HH aguardando','Efetivo','Efetivo por função']];
+ filt().sort((a,b)=>a.d.localeCompare(b.d)||tqOrd(a.tq,b.tq)||a.disc.localeCompare(b.disc)).forEach(r=>L.push([r.d.split('-').reverse().join('/'),r.t,tqName(r.tq),cap(r.disc),r.a,r.crit?cap(r.crit):'',r.ch,r.lib,r.w??'',r.cant?'':(r.atr?'Sim':'Não'),String(Math.round(hhOf(r)*10)/10).replace('.',','),Object.values(r.f).reduce((a,b)=>a+b,0),Object.entries(r.f).map(([k,v])=>v+' '+k).join(' · ')]));
+ const blob=new Blob(['﻿'+L.map(l=>l.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Painel_RDC_${S.de}_a_${S.ate}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+render();
+})();
+</script>
 </html>
