@@ -658,7 +658,7 @@ document.getElementById("upd").textContent=`dados até ${UPDATED}`;
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{applyLay();render()},150)});
 reset();
 </script>
-<!-- Melhorias 22/11 (Paulo): destaques do período, gráfico de HH por dia/semana, data e hora da atualização, botões Excel e PDF -->
+<!-- Melhorias 22/11 (Paulo): destaques do período, gráfico de HH por dia/semana, data e hora da atualização, botão PDF (Excel retirado em 23/11, Paulo) -->
 <style>
 .hx{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .hx .stamp{font-size:12px;color:#dbe6ff;background:rgba(255,255,255,.12);border-radius:999px;padding:3px 10px}
@@ -685,10 +685,10 @@ reset();
 </style>
 <script>
 (function(){
-const UPD_TS="22/11 às 20:47";
+const UPD_TS="23/11 às 08:51";
 document.querySelector('.ttl .sub').insertAdjacentHTML('afterend',`<div class="hx"><span class="stamp">Atualizado em <b>${UPD_TS}</b></span></div>`);
 const rs=document.querySelector('.filters .reset');
-rs.insertAdjacentHTML('beforebegin',`<div class="xbar"><button class="xbtn" id="bXls" type="button">⬇ Excel</button><button class="xbtn" id="bPdf" type="button">🖨 PDF</button></div>`);rs.style.marginLeft='0';
+rs.insertAdjacentHTML('beforebegin',`<div class="xbar"><button class="xbtn" id="bPdf" type="button">🖨 PDF</button></div>`);rs.style.marginLeft='0';
 document.querySelector('.filters').insertAdjacentHTML('afterend',`<p class="printinfo" id="pinfo"></p>`);
 document.getElementById('kpis').insertAdjacentHTML('beforebegin',`<section class="card wide"><p class="eyebrow">Destaques do período</p><div class="hl" id="hl"></div></section>`);
 // botão dia/semana no gráfico de HH
@@ -742,12 +742,6 @@ function extra(){
  document.getElementById('pinfo').textContent=`Filtro: ${fmtD(S.de)}/${S.de.slice(0,4)} a ${fmtD(S.ate)}/${S.ate.slice(0,4)} · ${S.tq?tqName(S.tq):'todos os locais'} · ${S.turno||'todos os turnos'} · ${S.disc.size===DISC.length?'todas as disciplinas':[...S.disc].map(cap).join(', ')} · atualizado em ${UPD_TS}`;
 }
 document.getElementById('bPdf').onclick=()=>window.print();
-document.getElementById('bXls').onclick=()=>{
- const q=v=>{v=v==null?'':String(v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
- const L=[['Data','Turno','Local/TQ','Disciplina','Atividade','Criticidade da PT','Chegada','Liberação','Espera (min)','Atraso (≥40 min)','HH aguardando','Efetivo','Efetivo por função']];
- filt().sort((a,b)=>a.d.localeCompare(b.d)||tqOrd(a.tq,b.tq)||a.disc.localeCompare(b.disc)).forEach(r=>L.push([r.d.split('-').reverse().join('/'),r.t,tqName(r.tq),cap(r.disc),r.a,r.crit?cap(r.crit):'',r.ch,r.lib,r.w??'',r.cant?'':(r.atr?'Sim':'Não'),String(Math.round(hhOf(r)*10)/10).replace('.',','),Object.values(r.f).reduce((a,b)=>a+b,0),Object.entries(r.f).map(([k,v])=>v+' '+k).join(' · ')]));
- const blob=new Blob(['﻿'+L.map(l=>l.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Painel_RDC_${S.de}_a_${S.ate}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 render();
 })();
 </script>
